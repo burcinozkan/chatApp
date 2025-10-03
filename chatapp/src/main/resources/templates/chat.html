@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Chat App</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>Spring Chat App</h2>
+
+<div id="messages">
+  <div th:each="msg : ${messages}">
+    <p><b th:text="${msg.sender}"></b>: <span th:text="${msg.content}"></span></p>
+  </div>
+</div>
+
+<input type="text" id="sender" placeholder="Name"/>
+<input type="text" id="msg" placeholder="Message"/>
+<button onclick="sendMessage()">Send</button>
+
+<script>
+  var socket = new SockJS('/chat');
+  var stompClient = Stomp.over(socket);
+
+  stompClient.connect({}, function() {
+    stompClient.subscribe('/topic/messages', function (message) {
+      var msg = JSON.parse(message.body);
+      document.getElementById("messages").innerHTML +=
+              "<p><b>" + msg.sender + ":</b> " + msg.content + "</p>";
+    });
+  });
+
+  function sendMessage() {
+    var sender = document.getElementById("sender").value;
+    var content = document.getElementById("msg").value;
+    stompClient.send("/app/send", {}, JSON.stringify({'sender': sender, 'content': content}));
+    document.getElementById("msg").value = "";
+  }
+</script>
+</body>
+</html>
+
